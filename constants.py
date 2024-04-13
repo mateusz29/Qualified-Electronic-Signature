@@ -1,5 +1,6 @@
 from Crypto.Cipher import AES
 
+VOLUME_SERIAL_NUMBER = "C0008E5C"
 PRIVATE_KEY_NAME = "private_key.pem"
 PUBLIC_KEY_NAME = "public_key.pem"
 KEY_SIZE = 4096

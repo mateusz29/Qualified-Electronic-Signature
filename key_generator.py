@@ -1,9 +1,12 @@
-from tkinter import Tk, Label, Entry, Button, filedialog, messagebox
+# Third-party library imports
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
-from Crypto.Util.Padding import pad
-from Crypto.Cipher import AES
 import hashlib
+from tkinter import Tk, Label, Entry, Button, filedialog, messagebox
+
+# Constants 
 from constants import PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, KEY_SIZE, PUBLIC_EXPONENT, CIPHER_MODE, BLOCK_SIZE, INITIALIZATION_VECTOR
 
 def generate_keys():

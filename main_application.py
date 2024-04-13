@@ -1,31 +1,24 @@
 # Standard library imports
+from datetime import datetime
 import os
 import threading
 import time
-from datetime import datetime
 
 # Third-party library imports
-from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, ttk, Frame
-from PIL import Image, ImageTk
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.exceptions import InvalidSignature
-from Crypto.Util.Padding import unpad
-from Crypto.Cipher import AES
-from lxml import etree
-import pythoncom
 import hashlib
+from lxml import etree
+from PIL import Image, ImageTk
+import pythoncom
+from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, Frame
 import wmi
 
 # Constants and global variables
-VOLUME_SERIAL_NUMBER = "C0008E5C"
-PRIVATE_KEY_NAME = "private_key.pem"
-PUBLIC_KEY_NAME = "public_key.pem"
-KEY_SIZE = 4096
-PUBLIC_EXPONENT = 65537
-CIPHER_MODE = AES.MODE_CBC
-BLOCK_SIZE = AES.block_size
-INITIALIZATION_VECTOR = b'\xedZY\xda\xf6\xc3\x89\xb3\xc3\x1b\xf5\x9b\xac\xafQ\xd6'
+from constants import PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, CIPHER_MODE, BLOCK_SIZE, INITIALIZATION_VECTOR, VOLUME_SERIAL_NUMBER
 drive_letter = ''
 
 def encrypt(data):

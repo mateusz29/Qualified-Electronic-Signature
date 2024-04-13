@@ -48,6 +48,7 @@ def encrypt_private_pem(pin, private_pem):
     return encrypted_private_key
 
 def save_key(key, key_name):
+    # Need to remove the '_key.pem' from the name 
     short_name = key_name[:-8]
     capitalized_name = short_name.capitalize()
 
@@ -59,7 +60,7 @@ def save_key(key, key_name):
         messagebox.showinfo("Success", f"{capitalized_name} key saved successfully.")
         return True
     else:
-        messagebox.showwarning("Warning", f"No directory selected for {short_name} key.")
+        messagebox.showwarning("Warning", f"No directory selected for {short_name} key.\nKey wasn't saved.")
         return False
 
 def generate_keys_button():
@@ -71,11 +72,9 @@ def generate_keys_button():
         messagebox.showwarning("Warning", "No PIN entered!")
     else:
         encrypted_private_key = encrypt_private_pem(pin, private_pem)
+        save_key(encrypted_private_key, PRIVATE_KEY_NAME)
+        save_key(public_pem, PUBLIC_KEY_NAME)
 
-        if save_key(encrypted_private_key, PRIVATE_KEY_NAME):
-            save_key(public_pem, PUBLIC_KEY_NAME)
-        else:
-            return
         # Clear the PIN entry field
         pin_entry.delete(0, 'end')
 

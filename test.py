@@ -93,9 +93,9 @@ if __name__ == "__main__":
     print(PRIVATE_KEY_NAME[:-8])
     print(PUBLIC_KEY_NAME[:-8])
 
-    # root = Tk()
-    # root.title("Main app")
-    # root.geometry("500x300")
+    root = Tk()
+    root.title("Main app")
+    root.geometry("500x300")
 
     # with open(PRIVATE_KEY_NAME, "rb") as key_file:
     #     private_pem = key_file.read()

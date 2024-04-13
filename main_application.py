@@ -14,7 +14,7 @@ import hashlib
 from lxml import etree
 from PIL import Image, ImageTk
 import pythoncom
-from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, Frame
+from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, Frame, ttk, StringVar
 import wmi
 
 # Constants and global variables
@@ -380,72 +380,39 @@ def update_status():
 if __name__ == "__main__":
     root = Tk()
     root.title("Main App")
-    root.geometry("600x400")
-    root.resizable(True, True)
+    root.geometry("500x400")
+    root.resizable(False, False)
 
-    # Set a custom background color
-    root.configure(bg="#f0f0f0")
-
-    # Load the images and resize them
+    # Loading the images
     connected_image = Image.open("icons/usb_connected.png")
     disconnected_image = Image.open("icons/usb_disconnected.png")
     connected_image = connected_image.resize((50, 50), Image.Resampling.LANCZOS)
     disconnected_image = disconnected_image.resize((50, 50), Image.Resampling.LANCZOS)
-
-    # Create the Tkinter-compatible images
     connected_icon = ImageTk.PhotoImage(connected_image)
     disconnected_icon = ImageTk.PhotoImage(disconnected_image)
-    
-    # Create the status icon label
-    status_icon = Label(root, image=disconnected_icon, bg="#f0f0f0")
-    status_icon.grid(row=0, column=1, sticky="S", padx=20, pady=20)
 
-    # Create a separator line
+    # Making a status bar
+    status_text = StringVar()
+    status_bar = Label(root, textvariable=status_text, anchor="s", font=("Arial", 14), wraplength=300)
+    status_bar.grid(row=0, column=0, columnspan=2, sticky="EW", padx=20, pady=10)
+    status_text.set("Application for encrypting, decrypting, signing and verificating")
+
+    # Creation of a status icon label, line seperator and buttons
+    status_icon = Label(root, image=disconnected_icon)
+    status_icon.grid(row=0, column=1, sticky="E", padx=20, pady=20)
     separator = Frame(root, height=2, bg="gray")
-    separator.grid(row=1, column=0, columnspan=3, sticky="EW", padx=20, pady=10)
+    separator.grid(row=1, column=0, columnspan=2, sticky="EW", padx=10, pady=20)
+    button_style = {"bg": "#9C27B0", "fg": "white", "font": ("Arial", 12), "width": 20, "padx": 10, "pady": 10}
+    encrypt_button = Button(root, text="Encrypt File", command=encrypt_file, **button_style)
+    decrypt_button = Button(root, text="Decrypt File", command=decrypt_file, **button_style)
+    sign_document_button = Button(root, text="Sign Document", command=sign_file, **button_style)
+    verify_signature_button = Button(root, text="Verify Signature", command=verify_signature, **button_style)
+    encrypt_button.grid(row=2, column=0, sticky="EW", padx=20, pady=40)
+    decrypt_button.grid(row=3, column=0, sticky="EW", padx=20)
+    sign_document_button.grid(row=2, column=1, sticky="EW", padx=20, pady=40)
+    verify_signature_button.grid(row=3, column=1, sticky="EW", padx=20)
 
-    # Create the buttons with a modern style
-    encrypt_button = Button(root, text="Encrypt File", command=encrypt_file, bg="#4CAF50", fg="white", font=("Arial", 12), padx=10, pady=5)
-    decrypt_button = Button(root, text="Decrypt File", command=decrypt_file, bg="#2196F3", fg="white", font=("Arial", 12), padx=10, pady=5)
-    sign_document_button = Button(root, text="Sign Document", command=sign_file, bg="#9C27B0", fg="white", font=("Arial", 12), padx=10, pady=5)
-    verify_signature_button = Button(root, text="Verify Signature", command=verify_signature, bg="#E91E63", fg="white", font=("Arial", 12), padx=10, pady=5)
-
-    # Grid the buttons
-    encrypt_button.grid(row=2, column=0, sticky="EW", padx=10, pady=10)
-    decrypt_button.grid(row=3, column=0, sticky="EW", padx=10, pady=10)
-    sign_document_button.grid(row=2, column=1, sticky="EW", padx=10, pady=10)
-    verify_signature_button.grid(row=3, column=1, sticky="EW", padx=10, pady=10)
-
-    # Start the status update thread
+    # Starting the update thread
     threading.Thread(target=update_status, daemon=True).start()
 
     root.mainloop()
-
-    # root = Tk()
-    # root.title("Main app")
-    # root.geometry("500x300")
-
-    # connected_image = Image.open("icons/usb_connected.png")
-    # disconnected_image = Image.open("icons/usb_disconnected.png")
-
-    # connected_image = connected_image.resize((50, 50), Image.Resampling.LANCZOS)
-    # disconnected_image = disconnected_image.resize((50, 50), Image.Resampling.LANCZOS)
-
-    # connected_icon = ImageTk.PhotoImage(connected_image)
-    # disconnected_icon = ImageTk.PhotoImage(disconnected_image)
-
-    # status_icon = Label(root)
-    # status_icon.grid(row=0, column=1, sticky= "E", padx=350)
-
-    # encrypt_button = Button(root, text="Encrypt file", command=encrypt_file)
-    # decrypt_button = Button(root, text="Decrypt file", command=decrypt_file)
-    # sign_document_button = Button(root, text="Sign document", command=sign_file)
-    # verify_signature_button = Button(root, text="Verify signature", command=verify_signature)
-
-    # encrypt_button.grid(row=1, column=0, sticky= "EW", padx=2)
-    # decrypt_button.grid(row=2, column=0, sticky= "EW", padx=2)
-    # sign_document_button.grid(row=3, column=0, sticky= "EW", padx=2)
-    # verify_signature_button.grid(row=4, column=0, sticky= "EW", padx=2)
-
-    # threading.Thread(target=update_status, daemon=True).start()
-    # root.mainloop()

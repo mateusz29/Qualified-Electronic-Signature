@@ -18,7 +18,7 @@ from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, 
 import wmi
 
 # Constants and global variables
-from constants import PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, CIPHER_MODE, BLOCK_SIZE, INITIALIZATION_VECTOR, VOLUME_SERIAL_NUMBER
+from constants import BLOCK_SIZE, CIPHER_MODE, INITIALIZATION_VECTOR, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
 drive_letter = ''
 
 def encrypt(data):

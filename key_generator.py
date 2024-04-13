@@ -7,7 +7,7 @@ import hashlib
 from tkinter import Tk, Label, Entry, Button, filedialog, messagebox
 
 # Constants 
-from constants import PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, KEY_SIZE, PUBLIC_EXPONENT, CIPHER_MODE, BLOCK_SIZE, INITIALIZATION_VECTOR
+from constants import BLOCK_SIZE, CIPHER_MODE, INITIALIZATION_VECTOR, KEY_SIZE, PRIVATE_KEY_NAME, PUBLIC_EXPONENT, PUBLIC_KEY_NAME
 
 def generate_keys():
     # Generation of private and public keys

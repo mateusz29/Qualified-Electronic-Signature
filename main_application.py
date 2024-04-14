@@ -192,7 +192,8 @@ def get_document_hash_xml(xml_file):
 
 def verification(signature_file, verified_file):
     public_key = get_public_key()
-
+    if public_key == None:
+        return False
     try:
         signature = get_document_hash_xml(signature_file)
         message = verified_file.read()
@@ -320,7 +321,7 @@ def encrypt_file():
 
                 with open(encrypted_file_path, 'wb') as file:
                     file.write(encrypted_bytes)
-                    
+
                 messagebox.showinfo("Information", "The encrypted file has been saved.")
             else:
                 return

@@ -14,28 +14,41 @@ import hashlib
 from lxml import etree
 from PIL import Image, ImageTk
 import pythoncom
-from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, Frame, ttk, StringVar
+from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, Frame, StringVar
 import wmi
 
 # Constants and global variables
 from constants import BLOCK_SIZE, CIPHER_MODE, INITIALIZATION_VECTOR, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
 drive_letter = ''
 
-def encrypt(data):
+def get_public_key():
     with open(PUBLIC_KEY_NAME, "rb") as key_file:
-        public_key = serialization.load_pem_public_key(
-            key_file.read()
-        )
+        try:
+            public_key = serialization.load_pem_public_key(
+                key_file.read()
+            )
+        except:
+            messagebox.showerror("Error", "Something is wrong with your public key!")
+            return
+    return public_key
 
-    ciphertext = public_key.encrypt(
-        data,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
+def get_private_pem():
+    ...
+
+def encrypt(data):
+    public_key = get_public_key()
+    if public_key:
+        ciphertext = public_key.encrypt(
+            data,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
         )
-    )
-    return ciphertext
+        return ciphertext
+    else:
+        return
 
 def decrypt(ciphertext, private_key_path):
     with open(private_key_path, "rb") as key_file:
@@ -51,7 +64,7 @@ def decrypt(ciphertext, private_key_path):
             decrypted_private_key = unpad(cipher.decrypt(private_pem), BLOCK_SIZE)
         except Exception as e:
             messagebox.showerror("Error", str(e) + "\nThe provided PIN was probably incorrect!")
-            return None
+            return
 
         private_key = serialization.load_pem_private_key(
             decrypted_private_key,
@@ -83,7 +96,7 @@ def sign(file_bytes, private_key_path):
             decrypted_private_key = unpad(cipher.decrypt(private_pem), BLOCK_SIZE)
         except Exception as e:
             messagebox.showerror("Error", str(e) + "\nThe provided PIN was probably incorrect!")
-            return None
+            return
 
         private_key = serialization.load_pem_private_key(
             decrypted_private_key,
@@ -178,10 +191,8 @@ def get_document_hash_xml(xml_file):
     return document_hash_bytes
 
 def verification(signature_file, verified_file):
-    with open(PUBLIC_KEY_NAME, "rb") as key_file:
-        public_key = serialization.load_pem_public_key(
-            key_file.read()
-        )
+    public_key = get_public_key()
+
     try:
         signature = get_document_hash_xml(signature_file)
         message = verified_file.read()
@@ -197,7 +208,6 @@ def verification(signature_file, verified_file):
         return True
     except InvalidSignature:
         return False
-
 
 def verify_signature():
     if os.path.exists(PUBLIC_KEY_NAME):
@@ -295,22 +305,25 @@ def encrypt_file():
         if file.name.lower().endswith(allowed_extensions):
             file_bytes = file.read()
             encrypted_bytes = encrypt(file_bytes)
-            file_name = os.path.basename(file.name).replace('.','_')
-            encrypted_file_path = filedialog.asksaveasfilename(
-                title="Save As",
-                defaultextension=".enc",
-                initialfile=file_name,
-                filetypes=[("Encrypted files","*.enc")]
-            )
+            if encrypted_bytes:
+                file_name = os.path.basename(file.name).replace('.','_')
+                encrypted_file_path = filedialog.asksaveasfilename(
+                    title="Save As",
+                    defaultextension=".enc",
+                    initialfile=file_name,
+                    filetypes=[("Encrypted files","*.enc")]
+                )
 
-            if encrypted_file_path == "":
-                messagebox.showwarning("Warning", "File wasn't saved!")
+                if encrypted_file_path == "":
+                    messagebox.showwarning("Warning", "File wasn't saved!")
+                    return
+
+                with open(encrypted_file_path, 'wb') as file:
+                    file.write(encrypted_bytes)
+                    
+                messagebox.showinfo("Information", "The encrypted file has been saved.")
+            else:
                 return
-
-            with open(encrypted_file_path, 'wb') as file:
-                file.write(encrypted_bytes)
-
-            messagebox.showinfo("Information", "The encrypted file has been saved.")
         else:
             messagebox.showwarning("Warning", "Invalid file type selected!")
     else:

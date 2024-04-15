@@ -32,8 +32,29 @@ def get_public_key():
             return
     return public_key
 
-def get_private_pem():
-    ...
+def get_private_key(private_key_path):
+    with open(private_key_path, "rb") as key_file:
+        private_pem = key_file.read()
+        
+    pin = get_pin()
+    if pin == '' or pin == None:
+        messagebox.showwarning("Warning", "No PIN entered!")
+        return
+    else:
+        try: 
+            key = hashlib.sha256(pin.encode()).digest()        
+            cipher = AES.new(key, CIPHER_MODE, INITIALIZATION_VECTOR)
+            decrypted_private_key = unpad(cipher.decrypt(private_pem), BLOCK_SIZE)
+        except Exception as e:
+            messagebox.showerror("Error", str(e) + "\nThe provided PIN was probably incorrect!")
+            return
+
+        private_key = serialization.load_pem_private_key(
+            decrypted_private_key,
+            password= None
+        )
+
+        return private_key
 
 def encrypt(data):
     public_key = get_public_key()
@@ -51,26 +72,8 @@ def encrypt(data):
         return
 
 def decrypt(ciphertext, private_key_path):
-    with open(private_key_path, "rb") as key_file:
-        private_pem = key_file.read()
-        
-    pin = get_pin()
-    if pin == '' or pin == None:
-        messagebox.showwarning("Warning", "No PIN entered!")
-    else:
-        try: 
-            key = hashlib.sha256(pin.encode()).digest()        
-            cipher = AES.new(key, CIPHER_MODE, INITIALIZATION_VECTOR)
-            decrypted_private_key = unpad(cipher.decrypt(private_pem), BLOCK_SIZE)
-        except Exception as e:
-            messagebox.showerror("Error", str(e) + "\nThe provided PIN was probably incorrect!")
-            return
-
-        private_key = serialization.load_pem_private_key(
-            decrypted_private_key,
-            password= None
-        )
-
+    private_key = get_private_key(private_key_path)
+    if private_key:
         plaintext = private_key.decrypt(
             ciphertext,
             padding.OAEP(
@@ -79,30 +82,13 @@ def decrypt(ciphertext, private_key_path):
                 label=None
             )
         )
-
         return plaintext
+    else:
+        return
 
 def sign(file_bytes, private_key_path):
-    with open(private_key_path, "rb") as key_file:
-        private_pem = key_file.read()
-        
-    pin = get_pin()
-    if pin == '' or pin == None:
-        messagebox.showwarning("Warning", "No PIN entered!")
-    else:
-        try: 
-            key = hashlib.sha256(pin.encode()).digest()        
-            cipher = AES.new(key, CIPHER_MODE, INITIALIZATION_VECTOR)
-            decrypted_private_key = unpad(cipher.decrypt(private_pem), BLOCK_SIZE)
-        except Exception as e:
-            messagebox.showerror("Error", str(e) + "\nThe provided PIN was probably incorrect!")
-            return
-
-        private_key = serialization.load_pem_private_key(
-            decrypted_private_key,
-            password= None
-        )
-
+    private_key = get_private_key(private_key_path)
+    if private_key:
         signature = private_key.sign(
             file_bytes,
             padding.PSS(
@@ -113,30 +99,35 @@ def sign(file_bytes, private_key_path):
         )
         
         return signature.hex()
+    else:
+        return
 
 def create_xades(file, private_key_path):
     file_bytes = file.read()
     document_hash = sign(file_bytes, private_key_path)
-    username = os.environ.get('USERNAME')
-    email = username + '@gmail.com'
+    if document_hash:
+        username = os.environ.get('USERNAME')
+        email = username + '@gmail.com'
 
-    root = etree.Element("Signature")
-    document_info = etree.SubElement(root, "DocumentInfo")
-    etree.SubElement(document_info, "Name").text = os.path.basename(file.name)
-    etree.SubElement(document_info, "Size").text = str(len(file_bytes))
-    etree.SubElement(document_info, "Extension").text = os.path.splitext(file.name)[1]
-    etree.SubElement(document_info, "ModifiedDate").text = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(os.path.getmtime(file.name)))
+        root = etree.Element("Signature")
+        document_info = etree.SubElement(root, "DocumentInfo")
+        etree.SubElement(document_info, "Name").text = os.path.basename(file.name)
+        etree.SubElement(document_info, "Size").text = str(len(file_bytes))
+        etree.SubElement(document_info, "Extension").text = os.path.splitext(file.name)[1]
+        etree.SubElement(document_info, "ModifiedDate").text = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(os.path.getmtime(file.name)))
 
-    signing_user = etree.SubElement(root, "SigningUser")
-    etree.SubElement(signing_user, "Name").text = username
-    etree.SubElement(signing_user, "Email").text = email
-    etree.SubElement(signing_user, "Timestamp").text = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        signing_user = etree.SubElement(root, "SigningUser")
+        etree.SubElement(signing_user, "Name").text = username
+        etree.SubElement(signing_user, "Email").text = email
+        etree.SubElement(signing_user, "Timestamp").text = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
-    etree.SubElement(root, "DocumentHash").text = document_hash
+        etree.SubElement(root, "DocumentHash").text = document_hash
 
-    signature_xml = etree.tostring(root, pretty_print=True)
+        signature_xml = etree.tostring(root, pretty_print=True)
 
-    return signature_xml
+        return signature_xml
+    else:
+        return
 
 def sign_file():
     private_key_path = os.path.join(drive_letter, PRIVATE_KEY_NAME)
@@ -160,22 +151,25 @@ def sign_file():
         allowed_extensions = (".cpp",".json",".sql",".txt")
         if file.name.lower().endswith(allowed_extensions):
             signature_bytes = create_xades(file, private_key_path)
-            file_name = os.path.basename(file.name).replace('.','_')
-            signature_file_path = filedialog.asksaveasfilename(
-                title="Save Signature As",
-                defaultextension=".xml",
-                initialfile=file_name + "_signature",
-                filetypes=[("XML files","*.xml")]
-            )
+            if signature_bytes:
+                file_name = os.path.basename(file.name).replace('.','_')
+                signature_file_path = filedialog.asksaveasfilename(
+                    title="Save Signature As",
+                    defaultextension=".xml",
+                    initialfile=file_name + "_signature",
+                    filetypes=[("XML files","*.xml")]
+                )
 
-            if signature_file_path == "":
-                messagebox.showwarning("Warning", "File wasn't saved!")
+                if signature_file_path == "":
+                    messagebox.showwarning("Warning", "File wasn't saved!")
+                    return
+
+                with open(signature_file_path, 'wb') as file:
+                    file.write(signature_bytes)
+
+                messagebox.showinfo("Information", "The signature file has been saved.")
+            else:
                 return
-
-            with open(signature_file_path, 'wb') as file:
-                file.write(signature_bytes)
-
-            messagebox.showinfo("Information", "The signature file has been saved.")
         else:
             messagebox.showwarning("Warning", "Invalid file type selected!")
     else:
@@ -341,7 +335,7 @@ def decrypt_file():
         
         file_bytes = file.read()
         decrypted_bytes = decrypt(file_bytes, private_key_path)
-        if decrypted_bytes != None:
+        if decrypted_bytes:
             name_parts = os.path.basename(file.name)[:-4].rsplit('_', 1)
             file_name = '.'.join(name_parts)
             decrypted_file_path = filedialog.asksaveasfilename(

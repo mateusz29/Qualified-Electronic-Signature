@@ -1,5 +1,6 @@
 # Third-party library imports
 from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
@@ -7,7 +8,7 @@ import hashlib
 from tkinter import Tk, Label, Entry, Button, filedialog, messagebox
 
 # Constants 
-from constants import BLOCK_SIZE, CIPHER_MODE, INITIALIZATION_VECTOR, KEY_SIZE, PRIVATE_KEY_NAME, PUBLIC_EXPONENT, PUBLIC_KEY_NAME
+from constants import BLOCK_SIZE, CIPHER_MODE, KEY_SIZE, PRIVATE_KEY_NAME, PUBLIC_EXPONENT, PUBLIC_KEY_NAME
 
 def generate_keys():
     # Generation of private and public keys
@@ -38,14 +39,13 @@ def generate_keys_pem():
     return private_pem, public_pem
 
 def encrypt_private_pem(pin, private_pem):
-    # Creation a hash from the pin
+    # Creation and decrytpion of private key
     key = hashlib.sha256(pin.encode()).digest()
-    # Making a cipher using the hash as a key
-    cipher = AES.new(key, CIPHER_MODE, INITIALIZATION_VECTOR)
-    # Encryption of the private key
+    iv = get_random_bytes(BLOCK_SIZE)
+    cipher = AES.new(key, CIPHER_MODE, iv)
     encrypted_private_key = cipher.encrypt(pad(private_pem, BLOCK_SIZE))
 
-    return encrypted_private_key
+    return iv + encrypted_private_key
 
 def save_key(key, key_name):
     # Need to remove the '_key.pem' from the name 

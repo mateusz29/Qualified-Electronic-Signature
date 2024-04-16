@@ -18,7 +18,7 @@ from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, 
 import wmi
 
 # Constants and global variables
-from constants import BLOCK_SIZE, CIPHER_MODE, INITIALIZATION_VECTOR, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
+from constants import BLOCK_SIZE, CIPHER_MODE, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
 drive_letter = ''
 
 def get_public_key():
@@ -42,9 +42,10 @@ def get_private_key(private_key_path):
         return
     else:
         try: 
-            key = hashlib.sha256(pin.encode()).digest()        
-            cipher = AES.new(key, CIPHER_MODE, INITIALIZATION_VECTOR)
-            decrypted_private_key = unpad(cipher.decrypt(private_pem), BLOCK_SIZE)
+            key = hashlib.sha256(pin.encode()).digest()
+            # First BLOCK_SIZE amount of bytes are the initialization vector
+            cipher = AES.new(key, CIPHER_MODE, private_pem[:BLOCK_SIZE])
+            decrypted_private_key = unpad(cipher.decrypt(private_pem[BLOCK_SIZE:]), BLOCK_SIZE)
         except Exception as e:
             messagebox.showerror("Error", str(e) + "\nThe provided PIN was probably incorrect!")
             return
@@ -87,10 +88,11 @@ def decrypt(ciphertext, private_key_path):
         return
 
 def sign(file_bytes, private_key_path):
+    hash_of_file_bytes = hashlib.sha256(file_bytes).digest()
     private_key = get_private_key(private_key_path)
     if private_key:
         signature = private_key.sign(
-            file_bytes,
+            hash_of_file_bytes,
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()),
                 salt_length=padding.PSS.MAX_LENGTH
@@ -190,7 +192,7 @@ def verification(signature_file, verified_file):
         return False
     try:
         signature = get_document_hash_xml(signature_file)
-        message = verified_file.read()
+        message = hashlib.sha256(verified_file.read()).digest()
         public_key.verify(
             signature,
             message,

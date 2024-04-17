@@ -13,7 +13,7 @@ from PIL import Image, ImageTk
 import pythoncom
 from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, Frame, StringVar
 import wmi
-from src.constants import BLOCK_SIZE, CIPHER_MODE, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
+from constants import BLOCK_SIZE, CIPHER_MODE, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
 
 drive_letter = ''
 

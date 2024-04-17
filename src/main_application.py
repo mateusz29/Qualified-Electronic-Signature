@@ -1,10 +1,7 @@
-# Standard library imports
 from datetime import datetime
 import os
 import threading
 import time
-
-# Third-party library imports
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from cryptography.exceptions import InvalidSignature
@@ -16,9 +13,8 @@ from PIL import Image, ImageTk
 import pythoncom
 from tkinter import Tk, Label, messagebox, Button, Entry, Toplevel, filedialog, Frame, StringVar
 import wmi
+from src.constants import BLOCK_SIZE, CIPHER_MODE, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
 
-# Constants and global variables
-from constants import BLOCK_SIZE, CIPHER_MODE, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME, VOLUME_SERIAL_NUMBER
 drive_letter = ''
 
 def get_public_key():

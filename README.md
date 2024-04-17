@@ -1,1 +1,1 @@
-# bsk-project
+# Tool for Emulating the Qualified Electronic Signature

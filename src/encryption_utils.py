@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 from constants import ALLOWED_EXSTENSIONS, BLOCK_SIZE, CIPHER_MODE, PRIVATE_KEY_NAME, PUBLIC_KEY_NAME
 
+
 class EncryptionUtils:
     def __init__(self):
         self.drive_letter = ''
@@ -159,49 +160,23 @@ class EncryptionUtils:
 
     def sign_file(self):
         private_key_path = os.path.join(self.drive_letter, PRIVATE_KEY_NAME)
-        if os.path.exists(private_key_path):
-            file = filedialog.askopenfile(
-                mode="rb",
-                title="Choose file to sign.",
-                filetypes=[
-                    ("All files","*.*"),
-                    ("C++ Source","*.cpp"),
-                    ("JSON Source File","*.json"),
-                    ("SQL Source File","*.sql"),
-                    ("Text Document","*.txt")                
-                ]
-            )
-
-            if file is None:
-                messagebox.showwarning("Warning", "No file selected!")
-                return
-            
-            if file.name.lower().endswith(ALLOWED_EXSTENSIONS):
-                signature_bytes = self.create_xades(file, private_key_path)
-                if signature_bytes:
-                    file_name = os.path.basename(file.name).replace('.','_')
-                    signature_file_path = filedialog.asksaveasfilename(
-                        title="Save Signature As",
-                        defaultextension=".xml",
-                        initialfile=file_name + "_signature",
-                        filetypes=[("XML files","*.xml")]
-                    )
-
-                    if signature_file_path == "":
-                        messagebox.showwarning("Warning", "File wasn't saved!")
-                        return
-
-                    with open(signature_file_path, 'wb') as file:
-                        file.write(signature_bytes)
-
-                    messagebox.showinfo("Information", "The signature file has been saved.")
-                else:
-                    return
-            else:
-                messagebox.showwarning("Warning", "Invalid file type selected!")
-        else:
-            messagebox.showerror("Error", "Can't find private key!")
+        if not self.check_key_existence(private_key_path):
             return
+
+        chosen_file = self.select_file("Choose file to sign.", ALLOWED_EXSTENSIONS, None)
+        if not chosen_file:
+            return
+        
+        signature_bytes = self.create_xades(chosen_file, private_key_path)
+        if not signature_bytes:
+            return
+        
+        file_name = os.path.basename(chosen_file.name).replace('.','_') + "_signature"
+        signature_file_path = self.save_file_dialog(".xml", file_name, [("XML files","*.xml")])
+        if not signature_file_path:
+            return
+        
+        self.write_file(signature_file_path, signature_bytes, "The signature file has been saved.")
 
     def get_document_hash_from_xml(self, xml_file):
         xml_string = xml_file.read().decode()
@@ -212,47 +187,26 @@ class EncryptionUtils:
         return document_hash_bytes
 
     def verify_signature(self):
-        if os.path.exists(PUBLIC_KEY_NAME):
-            signature_file = filedialog.askopenfile(
-                mode="rb",
-                title="Choose signature to verify.",
-                filetypes=[
-                    ("XML files","*.xml")
-                ]
-            )
-
-            if signature_file is None:
-                messagebox.showwarning("Warning", "No file selected!")
-                return
-            
-            verified_file = filedialog.askopenfile(
-                mode="rb",
-                title="Choose file to verify with the signature.",
-                filetypes=[
-                    ("All files","*.*"),
-                    ("C++ Source","*.cpp"),
-                    ("JSON Source File","*.json"),
-                    ("SQL Source File","*.sql"),
-                    ("Text Document","*.txt")  
-                ]
-            )
-
-            if verified_file is None:
-                messagebox.showwarning("Warning", "No file selected!")
-                return
-
-            if verified_file.name.lower().endswith(ALLOWED_EXSTENSIONS):
-                if self.verification(signature_file, verified_file):
-                    messagebox.showinfo("Verification Success", "Verification of the signature was successful.")
-                else:
-                    messagebox.showinfo("Verification Failed", "Signature can't be verified.")
-            else:
-                extensions_formatted = ", ".join(ALLOWED_EXSTENSIONS)
-                message = "Invalid file type selected! \nExpected one of the following file types: {}".format(extensions_formatted)
-                messagebox.showerror("Error", message)
-        else:
-            messagebox.showerror("Error", "Can't find public key!")
+        if not self.check_key_existence(PUBLIC_KEY_NAME):
             return
+        
+        signature_file = self.select_file("Choose signature to verify", ".xml", "Invalid file type selected!\nExpected: .xml")
+        if not signature_file:
+            return
+        
+        verified_file = self.select_file("Choose file to verify with the signature.", ALLOWED_EXSTENSIONS, None)
+        if not verified_file:
+            return
+        
+        if self.verification(signature_file, verified_file):
+            messagebox.showinfo("Verification Success", "Verification of the signature was successful.")
+        else:
+            messagebox.showinfo("Verification Failed", "Signature can't be verified.")
+
+    def invalid_file_type_message(self):
+        extensions_formatted = ", ".join(ALLOWED_EXSTENSIONS)
+        message = "Invalid file type selected!\nExpected one of the following file types: {}".format(extensions_formatted)
+        messagebox.showerror("Error", message)
 
     def get_pin(self):
         pin_window = tk.Toplevel(self.root)
@@ -285,7 +239,7 @@ class EncryptionUtils:
             title=title,
         )
         if not file:
-            messagebox.showwarning("Warning", "No file selected!")
+            messagebox.showerror("Error", "No file selected!")
         return file
 
     def save_file_dialog(self, defaultextension, initialfile, filetypes):
@@ -296,52 +250,70 @@ class EncryptionUtils:
             filetypes=filetypes
         )
         if not file_path:
-            messagebox.showwarning("Warning", "File wasn't saved!")
+            messagebox.showerror("Error", "File wasn't saved!")
         return file_path
 
+    def check_key_existence(self, key_path):
+        if not os.path.exists(key_path):
+            messagebox.showerror("Error", f"Can't find at {key_path}!")
+            return False
+        return True
+
+    def select_file(self, message, file_type, warning_message):
+        file = self.select_file_dialog(message)
+        if not file:
+            return
+        if not file.name.endswith(file_type):
+            if warning_message:
+                messagebox.showerror("Error", warning_message)
+            else:
+                self.invalid_file_type_message()
+            return
+        return file
+
+    def write_file(self, file_path, data, message):
+        with open(file_path, 'wb') as file:
+            file.write(data)
+        messagebox.showinfo("Information", message)
+
     def encrypt_file(self):
-        if not os.path.exists(PUBLIC_KEY_NAME):
-            messagebox.showerror("Error", "Can't find public key!")
+        if not self.check_key_existence(PUBLIC_KEY_NAME):
             return
         
-        file = self.select_file_dialog("Choose file to encrypt.")
-        if file:
-            if file.name.lower().endswith(ALLOWED_EXSTENSIONS):
-                file_bytes = file.read()
-                encrypted_bytes = self.encrypt(file_bytes)
-                if encrypted_bytes:
-                    file_name = os.path.basename(file.name).replace('.','_')
-                    encrypted_file_path = self.save_file_dialog(".enc", file_name, [("Encrypted files","*.enc")])
-
-                    if encrypted_file_path:
-                        with open(encrypted_file_path, 'wb') as file:
-                            file.write(encrypted_bytes)
-                        messagebox.showinfo("Information", "The encrypted file has been saved.")
-            else:
-                messagebox.showwarning("Warning", "Invalid file type selected!")
-
+        chosen_file = self.select_file("Choose file to encrypt.", ALLOWED_EXSTENSIONS, None)        
+        if not chosen_file:
+            return
+        
+        file_bytes = chosen_file.read()
+        encrypted_bytes = self.encrypt(file_bytes)
+        if not encrypted_bytes:
+            return
+        
+        file_name = os.path.basename(chosen_file.name).replace('.','_')
+        encrypted_file_path = self.save_file_dialog(".enc", file_name, [("Encrypted files","*.enc")])
+        if not encrypted_file_path:
+            return
+        
+        self.write_file(encrypted_file_path, encrypted_bytes, "The encrypted file has been saved.")
 
     def decrypt_file(self):
         private_key_path = os.path.join(self.drive_letter, PRIVATE_KEY_NAME)
-        if not os.path.exists(private_key_path):
-            messagebox.showerror("Error", "Can't find private key!")
+        if not self.check_key_existence(private_key_path):
+            return
+                
+        encrypted_file = self.select_file("Choose file to decrypt.", ".enc", "Invalid file type selected!\nExpected: .enc")
+        if not encrypted_file:
             return
         
-        file = self.select_file_dialog("Choose file to decrypt.")
-        if file:
-            if file.name.lower().endswith(".enc"):
-                file_bytes = file.read()
-                decrypted_bytes = self.decrypt(file_bytes, private_key_path)
-                if decrypted_bytes:
-                    name_parts = os.path.basename(file.name)[:-4].rsplit('_', 1)
-                    file_name = '.'.join(name_parts)
-                    decrypted_file_path = self.save_file_dialog('', file_name, ALLOWED_EXSTENSIONS)
-
-                    if decrypted_file_path:
-                        with open(decrypted_file_path, 'wb') as file:
-                            file.write(decrypted_bytes)
-                        
-                        messagebox.showinfo("Information", "The decrypted file has been saved.")
-            else:
-                messagebox.showwarning("Warning", "Invalid file type selected!")
-
+        file_bytes = encrypted_file.read()
+        decrypted_bytes = self.decrypt(file_bytes, private_key_path)
+        if not decrypted_bytes:
+            return
+        
+        name_parts = os.path.basename(encrypted_file.name)[:-4].rsplit('_', 1)
+        file_name = '.'.join(name_parts)
+        decrypted_file_path = self.save_file_dialog('', file_name, [("C++ Source","*.cpp"), ("JSON Source File","*.json"), ("SQL Source File","*.sql"), ("Text Document","*.txt")] )
+        if not decrypted_file_path:
+            return
+                             
+        self.write_file(decrypted_file_path, decrypted_bytes, "The decrypted file has been saved.")

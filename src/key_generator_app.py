@@ -44,7 +44,7 @@ class KeyGeneratorApp:
         short_name = key_name[:-8]
         capitalized_name = short_name.capitalize()
 
-        #Saving the file in user specified directory
+        # Saving the file in user specified directory
         directory = filedialog.askdirectory(title=f"Select directory to save {short_name} key", mustexist=True)
         if directory:
             with open(directory + "/" + key_name, "wb") as key_file:

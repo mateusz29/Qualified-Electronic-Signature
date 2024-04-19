@@ -26,16 +26,15 @@ class MainApp:
         self.connected_icon = ImageTk.PhotoImage(connected_image)
         self.disconnected_icon = ImageTk.PhotoImage(disconnected_image)
 
-        # Making a status bar
+        # Setting up a status bar
         self.text = tk.StringVar()
         self.bar = tk.Label(root, textvariable=self.text, anchor="s", font=("Arial", 14), wraplength=300)
         self.bar.grid(row=0, column=0, columnspan=2, sticky="EW", padx=20, pady=10)
         self.text.set("Application for encrypting, decrypting, signing and verificating")
 
-        # Creation of a status icon label, line seperator and buttons
+        # Creating status icon label, line seperator and buttons
         self.status_icon = tk.Label(root, image=self.disconnected_icon)
         self.status_icon.grid(row=0, column=1, sticky="E", padx=20, pady=20)
-
         self.separator = tk.Frame(root, height=2, bg="gray")
         self.separator.grid(row=1, column=0, columnspan=2, sticky="EW", padx=10, pady=20)
 
@@ -54,7 +53,7 @@ class MainApp:
 
     def is_pendrive_connected(self):
         c = wmi.WMI()
-        for volume in c.Win32_LogicalDisk(DriveType=2):
+        for volume in c.Win32_LogicalDisk(DriveType=2):  # Checking for removable devices (DriveType=2)
             if volume.VolumeSerialNumber == VOLUME_SERIAL_NUMBER:
                 self.encryption_utils.drive_letter = volume.DeviceID
                 return True
@@ -62,7 +61,7 @@ class MainApp:
         return False
 
     def update_status(self):
-        pythoncom.CoInitialize()
+        pythoncom.CoInitialize()  # Have to do this to be able to use wmi in threads
         try:
             while True:    
                 is_connected = self.is_pendrive_connected()
@@ -71,6 +70,8 @@ class MainApp:
                 else:
                     self.status_icon.config(image=self.disconnected_icon)
                 time.sleep(1)
+        except:
+            pass
         finally:
             pythoncom.CoUninitialize()
 

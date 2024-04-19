@@ -1,5 +1,6 @@
 from Crypto.Cipher import AES
 
+ALLOWED_EXSTENSIONS = (".cpp", ".json", ".sql", ".txt")
 BLOCK_SIZE = AES.block_size
 CIPHER_MODE = AES.MODE_CBC
 KEY_SIZE = 4096

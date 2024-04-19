@@ -1,4 +1,5 @@
-from tkinter import Tk, Label, Entry, Button, filedialog, messagebox
+import tkinter as tk
+from tkinter import messagebox, filedialog
 from key_generator import KeyGenerator
 from constants import PRIVATE_KEY_NAME, PUBLIC_KEY_NAME
 
@@ -12,14 +13,14 @@ class KeyGeneratorApp:
 
         self.generator = KeyGenerator()
 
-        self.pin_label = Label(self.root, text="Enter a PIN:")
+        self.pin_label = tk.Label(self.root, text="Enter a PIN:")
         self.pin_label.pack(pady=20)
         
-        self.pin_entry = Entry(self.root, show="*")
+        self.pin_entry = tk.Entry(self.root, show="*")
         self.pin_entry.pack()
 
         button_style = {"bg": "#9C27B0", "fg": "white", "font": ("Arial", 10)}
-        self.generate_button = Button(self.root, text="Generate Keys", command=self.generate_keys_button_click, **button_style)
+        self.generate_button = tk.Button(self.root, text="Generate Keys", command=self.generate_keys_button_click, **button_style)
         self.generate_button.pack(pady=20)
     
     def generate_keys_button_click(self):
@@ -55,6 +56,6 @@ class KeyGeneratorApp:
             return False
 
 if __name__ == '__main__':
-    root = Tk()
+    root = tk.Tk()
     app = KeyGeneratorApp(root)
     root.mainloop()
